@@ -5,14 +5,14 @@ import (
   "fmt"
 )
 
-func read(conn net.Conn) {
+func read(conn net.Conn) (string) {
   buf := make([]byte, 1024)
   n, err := conn.Read(buf[:])
   if err != nil {
     fmt.Printf("error Read %s\n", err)
-    return
+    return ""
   }
-  print(string(buf[0:n]))
+  return string(buf[0:n])
 }
 
 func stream(af, dst, str string) {
@@ -23,7 +23,7 @@ func stream(af, dst, str string) {
   }
   defer conn.Close()
   conn.Write([]byte(str))
-  read(conn)
+  println(read(conn))
 }
 
 func udp(dst, str string) {
@@ -59,7 +59,7 @@ func unix_stream(dst, str string) {
   }
   defer conn.Close()
   conn.Write([]byte(str))
-  read(conn)
+  println(read(conn))
 }
 
 func unix_dgram(dst, str string) {
@@ -86,7 +86,7 @@ func unix(af, file, str string) {
     return
   }
   if af == "unix" {
-    read(conn)
+    println(read(conn))
   }
 }
 
@@ -100,4 +100,3 @@ func main() {
   unix_dgram("/tmp/unix_dgram.socket", "hello unix dgram2")
   unix_stream("/tmp/unix_stream.socket", "hello unix stream3")
 }
-
