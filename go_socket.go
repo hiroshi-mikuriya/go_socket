@@ -26,7 +26,7 @@ func stream(af, dst, str string) {
   println(read(conn))
 }
 
-func udp(dst, str string) {
+func udp1(dst, str string) {
   addr, err := net.ResolveUDPAddr("udp", dst)
   if err != nil {
     fmt.Printf("ResolveUDPAddr error: %s\n", err)
@@ -49,6 +49,17 @@ func udp2(dst, str string) {
   }
   defer conn.Close()
   conn.Write([]byte(str))
+}
+
+func udp3(dst, str string) {
+  addr, err := net.ResolveIPAddr("", "localhost")
+  // addr, err := net.ResolveUDPAddr("udp", dst)
+  // addr, err := net.ResolveTCPAddr("tcp", dst)
+  if err != nil {
+    fmt.Printf("ResolveIPAddr error: %s\n", err)
+    return
+  }
+  udp2(addr.String(), str)
 }
 
 func unix_stream(dst, str string) {
@@ -92,8 +103,9 @@ func unix(af, file, str string) {
 
 func main() {
   stream("tcp", "127.0.0.1:9002", "hello tcp")
-  udp("localhost:9001", "hello udp1")
+  udp1("localhost:9001", "hello udp1")
   udp2("127.0.0.1:9001", "hello udp2")
+  udp3("localhost:9001", "hello udp3")
   stream("unix", "/tmp/unix_stream.socket", "hello unix stream1")
   unix("unixgram", "/tmp/unix_dgram.socket", "hello unix dgram")
   unix("unix", "/tmp/unix_stream.socket", "hello unix stream2")
