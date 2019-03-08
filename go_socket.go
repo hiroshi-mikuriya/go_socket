@@ -5,14 +5,7 @@ import (
   "fmt"
 )
 
-func stream(af, dst, str string) {
-  conn, err := net.Dial(af, dst)
-  if err != nil {
-    fmt.Printf("Dial error: %s\n", err)
-    return
-  }
-  defer conn.Close()
-  conn.Write([]byte(str))
+func read(conn net.Conn) {
   buf := make([]byte, 1024)
   n, err := conn.Read(buf[:])
   if err != nil {
@@ -22,21 +15,64 @@ func stream(af, dst, str string) {
   print(string(buf[0:n]))
 }
 
-func dgram(af, dst, str string) {
-  addr, err := net.ResolveUDPAddr(af, dst)
+func stream(af, dst, str string) {
+  conn, err := net.Dial(af, dst)
+  if err != nil {
+    fmt.Printf("Dial error: %s\n", err)
+    return
+  }
+  defer conn.Close()
+  conn.Write([]byte(str))
+  read(conn)
+}
+
+func udp(dst, str string) {
+  addr, err := net.ResolveUDPAddr("udp", dst)
   if err != nil {
     fmt.Printf("ResolveUDPAddr error: %s\n", err)
     return
   }
-  conn, err := net.DialUDP(af, nil, addr)
+  conn, err := net.DialUDP("udp", nil, addr)
   if err != nil {
     fmt.Printf("DialUDP error %s\n", err)
     return
   }
+  defer conn.Close()
   conn.Write([]byte(str))
 }
 
-func unix_dgram(af, file, str string) {
+func udp2(dst, str string) {
+  conn, err := net.Dial("udp", dst)
+  if err != nil {
+    fmt.Printf("Dial error: %s\n", err)
+    return
+  }
+  defer conn.Close()
+  conn.Write([]byte(str))
+}
+
+func unix_stream(dst, str string) {
+  conn, err := net.Dial("unix", dst)
+  if err != nil {
+    fmt.Printf("Dial error: %s\n", err)
+    return
+  }
+  defer conn.Close()
+  conn.Write([]byte(str))
+  read(conn)
+}
+
+func unix_dgram(dst, str string) {
+  conn, err := net.Dial("unixgram", dst)
+  if err != nil {
+    fmt.Printf("Dial error: %s\n", err)
+    return
+  }
+  defer conn.Close()
+  conn.Write([]byte(str))
+}
+
+func unix(af, file, str string) {
   addr := net.UnixAddr{ file, af }
   conn, err := net.DialUnix(af, nil, &addr)
   if err != nil {
@@ -47,24 +83,21 @@ func unix_dgram(af, file, str string) {
   _, err = conn.Write([]byte(str))
   if err != nil {
     fmt.Printf("error Write %s\n", err)
-  }
-  if af != "unix" {
     return
   }
-  buf := make([]byte, 1024)
-  n, err := conn.Read(buf[:])
-  if err != nil {
-    fmt.Printf("error Read %s\n", err)
-    return
+  if af == "unix" {
+    read(conn)
   }
-  print(string(buf[0:n]))
 }
 
 func main() {
   stream("tcp", "127.0.0.1:9002", "hello tcp")
-  dgram("udp", "localhost:9001", "hello udp")
+  udp("localhost:9001", "hello udp1")
+  udp2("127.0.0.1:9001", "hello udp2")
   stream("unix", "/tmp/unix_stream.socket", "hello unix stream1")
-  unix_dgram("unixgram", "/tmp/unix_dgram.socket", "hello unix dgram")
-  unix_dgram("unix", "/tmp/unix_stream.socket", "hello unix stream2")
+  unix("unixgram", "/tmp/unix_dgram.socket", "hello unix dgram")
+  unix("unix", "/tmp/unix_stream.socket", "hello unix stream2")
+  unix_dgram("/tmp/unix_dgram.socket", "hello unix dgram2")
+  unix_stream("/tmp/unix_stream.socket", "hello unix stream3")
 }
 
